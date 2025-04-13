@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // Define a custom output path if needed, e.g., for better organization within src
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider     = "postgres" // Use PostgreSQL as the database provider
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL") // For direct access to the database
+  // Add relationMode = "prisma" for better handling of relations without explicit foreign keys in the DB
+  relationMode = "prisma"
+}
+
+// --- Models based on ER Diagram ---
+
+model Branch {
+  branch_id   Int              @id @default(autoincrement())
+  branch_name String           @unique @db.VarChar(100)
+  students    Student[] // Relation to Students
+  criteria    CriteriaBranch[] // Relation via linking table
+
+  @@map("branches") // Map to the 'branches' table
+}
+
+model Coordinator {
+  coordinator_id Int     @id @default(autoincrement())
+  name           String  @db.VarChar(255)
+  contact_no     String? @unique @db.VarChar(20)
+  email          String  @unique @db.VarChar(255)
+  address        String? @db.Text
+  password_hash  String  @db.VarChar(255)
+
+  @@map("coordinators") // Map to the 'coordinators' table
+}
+
+model Student {
+  student_id           String   @id @db.VarChar(50) // Using unique ID like Roll Number
+  name                 String   @db.VarChar(255)
+  department_branch_id Int
+  grade                String?  @db.VarChar(5) // Or potentially an Enum if predefined grades
+  percentage           Decimal? @db.Decimal(5, 2)
+  address              String?  @db.Text
+  contact_no           String?  @unique @db.VarChar(20)
+  email                String   @unique @db.VarChar(255)
+  resume_url           String?  @db.VarChar(512)
+  password_hash        String   @db.VarChar(255)
+
+  branch     Branch      @relation(fields: [department_branch_id], references: [branch_id])
+  placements Placement[] // Relation to Placements
+
+  @@map("students") // Map to the 'students' table
+}
+
+model Company {
+  company_id Int     @id @default(autoincrement())
+  name       String  @unique @db.VarChar(255)
+  contact_no String? @db.VarChar(20)
+  website    String? @db.VarChar(255)
+  address    String? @db.Text
+  drives     Drive[] // Relation to Drives
+
+  @@map("companies") // Map to the 'companies' table
+}
+
+model Criteria {
+  criteria_id    Int      @id @default(autoincrement())
+  min_percentage Decimal? @db.Decimal(5, 2)
+  description    String?  @db.VarChar(255)
+  active_status  Boolean  @default(true)
+
+  allowed_branches CriteriaBranch[] // Relation via linking table
+  drives           Drive[] // Relation to Drives
+
+  @@map("criteria") // Map to the 'criteria' table
+}
+
+// Explicit many-to-many linking table for Criteria and Branches
+model CriteriaBranch {
+  criteria_id Int
+  branch_id   Int
+
+  criteria Criteria @relation(fields: [criteria_id], references: [criteria_id])
+  branch   Branch   @relation(fields: [branch_id], references: [branch_id])
+
+  @@id([criteria_id, branch_id]) // Composite primary key
+  @@map("criteria_branches") // Map to the 'criteria_branches' table
+}
+
+// Renamed Company_Criteria to Drive for clarity
+model Drive {
+  drive_id             Int       @id @default(autoincrement())
+  company_id           Int
+  criteria_id          Int
+  job_title            String    @db.VarChar(255)
+  package_lpa          Decimal?  @db.Decimal(10, 2)
+  grade_offered        String?   @db.VarChar(50)
+  drive_date           DateTime? @db.Date
+  application_deadline DateTime? // Using DateTime for precision
+  description          String?   @db.Text
+
+  company    Company     @relation(fields: [company_id], references: [company_id])
+  criteria   Criteria    @relation(fields: [criteria_id], references: [criteria_id])
+  placements Placement[] // Relation to Placements
+
+  @@map("drives") // Map to the 'drives' table (originally company_criteria)
+}
+
+// Enum for Placement Status
+enum PlacementStatus {
+  Applied
+  Shortlisted
+  Interview_Scheduled @map("Interview_Scheduled") // Explicit mapping if needed
+  Offered
+  Offer_Accepted      @map("Offer_Accepted")
+  Offer_Rejected      @map("Offer_Rejected")
+  Not_Placed          @map("Not_Placed")
+}
+
+// Renamed Placements to Placement for singular resource convention
+model Placement {
+  placement_id          Int             @id @default(autoincrement())
+  student_id            String          @db.VarChar(50)
+  drive_id              Int
+  application_date      DateTime        @default(now()) @db.Timestamp(0)
+  status                PlacementStatus @default(Applied)
+  placement_date        DateTime?       @db.Date
+  package_lpa_confirmed Decimal?        @db.Decimal(10, 2)
+
+  student Student @relation(fields: [student_id], references: [student_id])
+  drive   Drive   @relation(fields: [drive_id], references: [drive_id])
+
+  @@map("placements") // Map to the 'placements' table
+}

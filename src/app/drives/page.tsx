@@ -43,26 +43,8 @@ export default function DrivesPage() {
 
 	const createApplication = useCreatePlacement();
 
-	// Handle resume check and redirect if not logged in
-	React.useEffect(() => {
-		if (status !== 'loading') {
-			if (!studentId) {
-				router.push('/student-login');
-			} else {
-				// Check for resume
-				fetchStudentData();
-			}
-		}
-	}, [status, studentId, router]);
-
-	// Clear initial load state after data is fetched
-	React.useEffect(() => {
-		if (!isLoadingDrives && !isLoadingApplications && isInitialLoad) {
-			setIsInitialLoad(false);
-		}
-	}, [isLoadingDrives, isLoadingApplications, isInitialLoad]);
-
-	async function fetchStudentData() {
+	// Define fetchStudentData BEFORE using it in useEffect
+	const fetchStudentData = React.useCallback(async () => {
 		if (!studentId) return;
 
 		try {
@@ -74,7 +56,26 @@ export default function DrivesPage() {
 		} catch (error) {
 			console.debug('Failed to fetch student data:', error);
 		}
-	}
+	}, [studentId]);
+
+	// Handle resume check and redirect if not logged in
+	React.useEffect(() => {
+		if (status !== 'loading') {
+			if (!studentId) {
+				router.push('/student-login');
+			} else {
+				// Check for resume
+				fetchStudentData();
+			}
+		}
+	}, [status, studentId, router, fetchStudentData]);
+
+	// Clear initial load state after data is fetched
+	React.useEffect(() => {
+		if (!isLoadingDrives && !isLoadingApplications && isInitialLoad) {
+			setIsInitialLoad(false);
+		}
+	}, [isLoadingDrives, isLoadingApplications, isInitialLoad]);
 
 	const handleApply = (driveId: number) => {
 		if (!studentId) return;

@@ -73,7 +73,6 @@ export const useGetPlacements = (filters?: {
 	studentId?: string | null;
 	status?: PlacementStatus | null;
 }) => {
-	const queryClient = useQueryClient();
 	const queryParams = new URLSearchParams();
 
 	if (filters?.driveId) {
@@ -98,9 +97,6 @@ export const useGetPlacements = (filters?: {
 		queryKey: [PLACEMENTS_QUERY_KEY, filters],
 		queryFn: async () => {
 			try {
-				// Only clear cache when explicitly requested, not on every fetch
-				// queryClient.removeQueries({ queryKey: [PLACEMENTS_QUERY_KEY, filters] });
-
 				const response = await fetch(`/api/placements${queryString}`, {
 					method: 'GET',
 					cache: 'no-store',

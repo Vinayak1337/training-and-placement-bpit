@@ -110,8 +110,6 @@ export const useGetDrive = (driveId: number | null) => {
 };
 
 export const useGetEligibleDrives = (studentId: string | null) => {
-	const queryClient = useQueryClient();
-
 	return useQuery<Drive[]>({
 		queryKey: [DRIVES_QUERY_KEY, 'eligible', studentId],
 		queryFn: async () => {
@@ -124,11 +122,6 @@ export const useGetEligibleDrives = (studentId: string | null) => {
 			}
 
 			try {
-				// Only clear cache when explicitly requested, not on every fetch
-				// queryClient.removeQueries({
-				// 	queryKey: [DRIVES_QUERY_KEY, 'eligible', studentId]
-				// });
-
 				const response = await fetch(
 					`/api/students/${studentId}/eligible-drives`,
 					{

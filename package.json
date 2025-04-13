@@ -68,5 +68,12 @@
     "form-data": "^4.0.2",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "^1.29.1",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=18.8.0"
   }
 }

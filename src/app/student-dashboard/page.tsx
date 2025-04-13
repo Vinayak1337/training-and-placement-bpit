@@ -20,10 +20,13 @@ import {
 	Placement,
 	PlacementStatus,
 	useCreatePlacement,
-	useGetPlacements
+	useGetPlacements,
+	PLACEMENTS_QUERY_KEY
 } from '@/hooks/api/placements';
 import toast from 'react-hot-toast';
 import { ResumeUpload } from '@/components/ui/resume-upload';
+import { useQueryClient } from '@tanstack/react-query';
+import { DRIVES_QUERY_KEY } from '@/hooks/api/drives';
 
 function StudentResumeManager() {
 	const { data: session } = useSession();
@@ -213,6 +216,19 @@ export default function StudentDashboard() {
 	const studentId = session?.user?.id;
 	const isLoading = status === 'loading';
 	const [hasResume, setHasResume] = React.useState<boolean>(false);
+	const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+	const queryClient = useQueryClient();
+
+	// Initialize hooks BEFORE using their values in useEffect
+	const { data: eligibleDrives, isLoading: isLoadingDrives } =
+		useGetEligibleDrives(studentId || '');
+
+	const { data: myApplications, isLoading: isLoadingApplications } =
+		useGetPlacements({
+			studentId: studentId || ''
+		});
+
+	const createApplication = useCreatePlacement();
 
 	React.useEffect(() => {
 		if (status !== 'loading' && !studentId) {
@@ -243,14 +259,12 @@ export default function StudentDashboard() {
 		fetchStudentResume();
 	}, [studentId]);
 
-	const { data: eligibleDrives, isLoading: isLoadingDrives } =
-		useGetEligibleDrives(studentId || '');
-	const { data: myApplications, isLoading: isLoadingApplications } =
-		useGetPlacements({
-			studentId: studentId || ''
-		});
-
-	const createApplication = useCreatePlacement();
+	// Clear initial load state after data is fetched
+	React.useEffect(() => {
+		if (!isLoadingDrives && !isLoadingApplications && isInitialLoad) {
+			setIsInitialLoad(false);
+		}
+	}, [isLoadingDrives, isLoadingApplications, isInitialLoad]);
 
 	if (isLoading) {
 		return (
@@ -279,6 +293,17 @@ export default function StudentDashboard() {
 			{
 				onSuccess: () => {
 					toast.success('Application Submitted');
+
+					// Force refetch of applications
+					queryClient.invalidateQueries({
+						queryKey: [PLACEMENTS_QUERY_KEY, { studentId: studentId }]
+					});
+					queryClient.invalidateQueries({
+						queryKey: [PLACEMENTS_QUERY_KEY, { driveId: driveId }]
+					});
+					queryClient.invalidateQueries({
+						queryKey: [DRIVES_QUERY_KEY, 'eligible', studentId]
+					});
 				},
 				onError: error => {
 					toast.error(`Application Failed: ${error.message}`);
@@ -507,28 +532,42 @@ export default function StudentDashboard() {
 				<TabsContent value='applications' className='space-y-4'>
 					<div className='grid gap-4'>
 						<h3 className='text-lg font-medium'>Your Applications</h3>
-						{isLoadingApplications ? (
+						{isInitialLoad && isLoadingApplications ? (
 							<div className='text-center py-10'>
 								<p className='text-muted-foreground'>Loading applications...</p>
 							</div>
 						) : (
-							renderApplications(
-								Array.isArray(myApplications) ? myApplications : []
-							)
+							<>
+								{isLoadingApplications && !isInitialLoad && (
+									<div className='text-sm text-muted-foreground mb-2'>
+										Refreshing applications...
+									</div>
+								)}
+								{renderApplications(
+									Array.isArray(myApplications) ? myApplications : []
+								)}
+							</>
 						)}
 					</div>
 				</TabsContent>
 				<TabsContent value='eligibleDrives' className='space-y-4'>
 					<div className='grid gap-4'>
 						<h3 className='text-lg font-medium'>Available Drives</h3>
-						{isLoadingDrives ? (
+						{isInitialLoad && isLoadingDrives ? (
 							<div className='text-center py-10'>
 								<p className='text-muted-foreground'>Loading drives...</p>
 							</div>
 						) : (
-							renderEligibleDrives(
-								Array.isArray(eligibleDrives) ? eligibleDrives : []
-							)
+							<>
+								{isLoadingDrives && !isInitialLoad && (
+									<div className='text-sm text-muted-foreground mb-2'>
+										Refreshing drives...
+									</div>
+								)}
+								{renderEligibleDrives(
+									Array.isArray(eligibleDrives) ? eligibleDrives : []
+								)}
+							</>
 						)}
 					</div>
 				</TabsContent>

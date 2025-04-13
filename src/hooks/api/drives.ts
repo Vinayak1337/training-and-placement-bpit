@@ -32,6 +32,7 @@ type DriveApiData = Omit<DriveFormData, 'package_lpa'> & {
 };
 
 const DRIVES_QUERY_KEY = 'drives';
+export { DRIVES_QUERY_KEY };
 
 const processDriveFormData = (data: DriveFormData): DriveApiData => ({
 	...data,
@@ -109,6 +110,8 @@ export const useGetDrive = (driveId: number | null) => {
 };
 
 export const useGetEligibleDrives = (studentId: string | null) => {
+	const queryClient = useQueryClient();
+
 	return useQuery<Drive[]>({
 		queryKey: [DRIVES_QUERY_KEY, 'eligible', studentId],
 		queryFn: async () => {
@@ -121,29 +124,52 @@ export const useGetEligibleDrives = (studentId: string | null) => {
 			}
 
 			try {
+				// Only clear cache when explicitly requested, not on every fetch
+				// queryClient.removeQueries({
+				// 	queryKey: [DRIVES_QUERY_KEY, 'eligible', studentId]
+				// });
+
 				const response = await fetch(
-					`/api/students/${studentId}/eligible-drives`
+					`/api/students/${studentId}/eligible-drives`,
+					{
+						method: 'GET',
+						cache: 'no-store',
+						headers: {
+							'Cache-Control': 'no-cache, no-store, must-revalidate',
+							Pragma: 'no-cache',
+							Expires: '0'
+						}
+					}
 				);
 
 				if (!response.ok) {
+					console.error('Failed to fetch eligible drives:', response.status);
 					return [];
 				}
 
 				try {
 					const data = await response.json();
 					if (!Array.isArray(data)) {
+						console.error('Expected array but got', typeof data);
 						return [];
 					}
 					return data;
 				} catch (parseError) {
-					console.debug('Failed to parse eligible drives JSON:', parseError);
+					console.error('Failed to parse eligible drives JSON:', parseError);
 					return [];
 				}
 			} catch (error) {
-				console.debug('Failed to fetch eligible drives:', error);
+				console.error('Failed to fetch eligible drives:', error);
 				return [];
 			}
 		},
+		staleTime: 30000, // Consider data stale after 30 seconds
+		gcTime: 300000, // Keep data in cache for 5 minutes
+		// Remove continuous refetching that's causing UI issues
+		// refetchInterval: 5000,
+		refetchOnMount: true,
+		refetchOnWindowFocus: true,
+		refetchOnReconnect: true,
 		enabled:
 			!!studentId && typeof studentId === 'string' && studentId.trim() !== '',
 		retry: 1

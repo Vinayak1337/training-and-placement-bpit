@@ -11,44 +11,17 @@ import {
 	CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useGetEligibleDrives } from '@/hooks/api/drives';
-import { useCreatePlacement, useGetPlacements } from '@/hooks/api/placements';
+import { useGetEligibleDrives, DRIVES_QUERY_KEY } from '@/hooks/api/drives';
+import {
+	useCreatePlacement,
+	useGetPlacements,
+	PLACEMENTS_QUERY_KEY
+} from '@/hooks/api/placements';
 import { PlacementStatus } from '@/hooks/api/placements';
 import toast from 'react-hot-toast';
 import { formatDate } from '@/lib/utils';
-
-// Error boundary component
-class ErrorBoundary extends React.Component<
-	{ children: React.ReactNode },
-	{ hasError: boolean }
-> {
-	constructor(props: { children: React.ReactNode }) {
-		super(props);
-		this.state = { hasError: false };
-	}
-
-	static getDerivedStateFromError() {
-		return { hasError: true };
-	}
-
-	componentDidCatch() {
-		// Silence the error
-	}
-
-	render() {
-		if (this.state.hasError) {
-			return (
-				<div className='flex justify-center items-center h-96'>
-					<div className='text-center'>
-						<p className='text-muted-foreground'>Something went wrong</p>
-					</div>
-				</div>
-			);
-		}
-
-		return this.props.children;
-	}
-}
+import { useQueryClient } from '@tanstack/react-query';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 export default function DrivesPage() {
 	const router = useRouter();
@@ -56,41 +29,52 @@ export default function DrivesPage() {
 	const studentId = session?.user?.id;
 	const isLoading = status === 'loading';
 	const [hasResume, setHasResume] = React.useState<boolean>(false);
+	const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+	const queryClient = useQueryClient();
 
-	// Fetch student's existing applications
+	// Initialize hooks BEFORE using their values in useEffect
+	const { data: eligibleDrives, isLoading: isLoadingDrives } =
+		useGetEligibleDrives(studentId || '');
+
 	const { data: myApplications, isLoading: isLoadingApplications } =
 		useGetPlacements({
 			studentId: studentId || ''
 		});
 
+	const createApplication = useCreatePlacement();
+
+	// Handle resume check and redirect if not logged in
 	React.useEffect(() => {
-		if (status !== 'loading' && !studentId) {
-			router.push('/student-login');
+		if (status !== 'loading') {
+			if (!studentId) {
+				router.push('/student-login');
+			} else {
+				// Check for resume
+				fetchStudentData();
+			}
 		}
 	}, [status, studentId, router]);
 
+	// Clear initial load state after data is fetched
 	React.useEffect(() => {
+		if (!isLoadingDrives && !isLoadingApplications && isInitialLoad) {
+			setIsInitialLoad(false);
+		}
+	}, [isLoadingDrives, isLoadingApplications, isInitialLoad]);
+
+	async function fetchStudentData() {
 		if (!studentId) return;
 
-		async function fetchStudentData() {
-			try {
-				const response = await fetch(`/api/students/${studentId}`);
-				if (!response.ok) return;
+		try {
+			const response = await fetch(`/api/students/${studentId}`);
+			if (!response.ok) return;
 
-				const student = await response.json();
-				setHasResume(!!student.resume_url);
-			} catch (error) {
-				// Silent failure - suppressing error:
-				console.debug('Failed to fetch student data:', error);
-			}
+			const student = await response.json();
+			setHasResume(!!student.resume_url);
+		} catch (error) {
+			console.debug('Failed to fetch student data:', error);
 		}
-
-		fetchStudentData();
-	}, [studentId]);
-
-	const { data: eligibleDrives, isLoading: isLoadingDrives } =
-		useGetEligibleDrives(studentId || '');
-	const createApplication = useCreatePlacement();
+	}
 
 	const handleApply = (driveId: number) => {
 		if (!studentId) return;
@@ -112,6 +96,17 @@ export default function DrivesPage() {
 			{
 				onSuccess: () => {
 					toast.success('Application Submitted Successfully');
+
+					// Force refetch data to update UI
+					queryClient.invalidateQueries({
+						queryKey: [PLACEMENTS_QUERY_KEY, { studentId: studentId }]
+					});
+					queryClient.invalidateQueries({
+						queryKey: [PLACEMENTS_QUERY_KEY, { driveId: driveId }]
+					});
+					queryClient.invalidateQueries({
+						queryKey: [DRIVES_QUERY_KEY, 'eligible', studentId]
+					});
 				},
 				onError: error => {
 					toast.error(`Application Failed: ${error.message}`);
@@ -120,7 +115,11 @@ export default function DrivesPage() {
 		);
 	};
 
-	if (isLoading || isLoadingDrives || isLoadingApplications) {
+	// Only show loading state during initial load to prevent infinite spinner
+	if (
+		isLoading ||
+		(isInitialLoad && (isLoadingDrives || isLoadingApplications))
+	) {
 		return (
 			<div className='flex justify-center items-center h-96'>
 				<div className='text-center'>
@@ -154,6 +153,11 @@ export default function DrivesPage() {
 		<ErrorBoundary>
 			<div className='pt-4'>
 				<h1 className='text-2xl font-bold mb-6'>Available Placement Drives</h1>
+				{isLoadingDrives && !isInitialLoad && (
+					<div className='mb-4 text-sm text-muted-foreground'>
+						Refreshing drives...
+					</div>
+				)}
 				<div className='grid gap-6'>
 					{eligibleDrives.map(drive => {
 						// Check if the student has already applied to this drive

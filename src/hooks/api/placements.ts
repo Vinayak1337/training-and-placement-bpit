@@ -53,6 +53,7 @@ type PlacementCreateApiData = Omit<
 };
 
 const PLACEMENTS_QUERY_KEY = 'placements';
+export { PLACEMENTS_QUERY_KEY };
 
 const processPlacementFormData = <
 	T extends PlacementCreateFormData | PlacementUpdateFormData
@@ -97,14 +98,16 @@ export const useGetPlacements = (filters?: {
 		queryKey: [PLACEMENTS_QUERY_KEY, filters],
 		queryFn: async () => {
 			try {
-				// Force cache clearing before fetching
-				queryClient.removeQueries({ queryKey: ['placements'] });
+				// Only clear cache when explicitly requested, not on every fetch
+				// queryClient.removeQueries({ queryKey: [PLACEMENTS_QUERY_KEY, filters] });
 
 				const response = await fetch(`/api/placements${queryString}`, {
+					method: 'GET',
 					cache: 'no-store',
 					headers: {
-						'Cache-Control': 'no-cache',
-						Pragma: 'no-cache'
+						'Cache-Control': 'no-cache, no-store, must-revalidate',
+						Pragma: 'no-cache',
+						Expires: '0'
 					}
 				});
 
@@ -119,6 +122,7 @@ export const useGetPlacements = (filters?: {
 					const data = await response.json();
 
 					if (!Array.isArray(data)) {
+						console.error('Expected array but got', typeof data);
 						return [];
 					}
 
@@ -133,13 +137,17 @@ export const useGetPlacements = (filters?: {
 					);
 				}
 			} catch (error) {
+				console.error('Error fetching placements:', error);
 				throw error;
 			}
 		},
-		staleTime: 0,
-		refetchInterval: 2000,
+		staleTime: 30000, // Consider data stale after 30 seconds
+		gcTime: 300000, // Keep data in cache for 5 minutes
+		// Remove continuous refetching that's causing UI issues
+		// refetchInterval: 5000,
 		refetchOnMount: true,
 		refetchOnWindowFocus: true,
+		refetchOnReconnect: true,
 		enabled: !(
 			filters?.studentId &&
 			(typeof filters.studentId !== 'string' || !filters.studentId.trim())
@@ -187,13 +195,31 @@ export const useCreatePlacement = () => {
 			return response.json();
 		},
 		onSuccess: data => {
+			// Invalidate all placement-related queries
 			queryClient.invalidateQueries({ queryKey: [PLACEMENTS_QUERY_KEY] });
+			queryClient.invalidateQueries({ queryKey: ['placements'] });
+
+			// Invalidate specific placement-related queries
+			queryClient.invalidateQueries({
+				queryKey: [PLACEMENTS_QUERY_KEY, { studentId: data.student_id }]
+			});
+			queryClient.invalidateQueries({
+				queryKey: [PLACEMENTS_QUERY_KEY, { driveId: data.drive_id }]
+			});
+
+			// Invalidate drives, eligible drives, and drive details
+			queryClient.invalidateQueries({ queryKey: ['drives'] });
 			queryClient.invalidateQueries({ queryKey: ['drives', data.drive_id] });
+			queryClient.invalidateQueries({ queryKey: ['eligibleDrives'] });
+
+			// Invalidate student-related queries
 			queryClient.invalidateQueries({
 				queryKey: ['students', data.student_id]
 			});
-			queryClient.invalidateQueries({ queryKey: ['placements'] });
+
+			// Invalidate statistics and other data
 			queryClient.invalidateQueries({ queryKey: ['branches'] });
+			queryClient.invalidateQueries({ queryKey: ['stats'] });
 		},
 		onError: error => {
 			// Error handled by the UI
@@ -228,16 +254,36 @@ export const useUpdatePlacement = () => {
 			return response.json();
 		},
 		onSuccess: (data, variables) => {
+			// Invalidate all placement-related queries
 			queryClient.invalidateQueries({ queryKey: [PLACEMENTS_QUERY_KEY] });
+			queryClient.invalidateQueries({ queryKey: ['placements'] });
+
+			// Invalidate specific placement queries
 			queryClient.invalidateQueries({
 				queryKey: [PLACEMENTS_QUERY_KEY, variables.placementId]
 			});
+			queryClient.invalidateQueries({
+				queryKey: [PLACEMENTS_QUERY_KEY, { studentId: data.student_id }]
+			});
+			queryClient.invalidateQueries({
+				queryKey: [PLACEMENTS_QUERY_KEY, { driveId: data.drive_id }]
+			});
+
+			// Invalidate drive-related queries
+			queryClient.invalidateQueries({ queryKey: ['drives'] });
 			queryClient.invalidateQueries({ queryKey: ['drives', data.drive_id] });
+			queryClient.invalidateQueries({ queryKey: ['eligibleDrives'] });
+
+			// Invalidate student-related queries
 			queryClient.invalidateQueries({
 				queryKey: ['students', data.student_id]
 			});
+
+			// Invalidate statistics and other data
 			queryClient.invalidateQueries({ queryKey: ['placements'] });
 			queryClient.invalidateQueries({ queryKey: ['branches'] });
+			queryClient.invalidateQueries({ queryKey: ['stats'] });
+			queryClient.invalidateQueries({ queryKey: ['dashboard'] });
 		},
 		onError: error => {
 			// Error handled by the UI

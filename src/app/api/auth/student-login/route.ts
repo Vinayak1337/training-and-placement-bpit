@@ -92,11 +92,19 @@ export async function POST(request: Request) {
 
 		
 		response.cookies.set('auth_token', token, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV !== 'development',
+			httpOnly: false, // Set to false to allow client-side access
+			secure: false, // Set to false for both HTTP and HTTPS access
 			maxAge: 60 * 60, 
 			sameSite: 'lax',
 			path: '/'
+		});
+		
+		// Log the token being set for debugging
+		console.log('Student login: Setting auth_token with cookie options:', {
+			httpOnly: false,
+			secure: false,
+			maxAge: 60 * 60,
+			sameSite: 'lax'
 		});
 
 		return response;

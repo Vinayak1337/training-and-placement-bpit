@@ -17,15 +17,29 @@ export async function POST(request: Request) {
 			{ status: 200 }
 		);
 
+		// Use the same cookie name as the login routes
+		response.cookies.set({
+			name: 'auth_token',
+			value: token,
+			httpOnly: false,
+			secure: false,
+			path: '/',
+			sameSite: 'lax', // Changed from strict to lax for better compatibility
+			maxAge: 60 * 60
+		});
+		
+		// Also set authToken for backward compatibility
 		response.cookies.set({
 			name: 'authToken',
 			value: token,
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
+			httpOnly: false,
+			secure: false,
 			path: '/',
-			sameSite: 'strict',
+			sameSite: 'lax',
 			maxAge: 60 * 60
 		});
+		
+		console.log('Set-token: cookies set with httpOnly and secure false');
 
 		return response;
 	} catch (error) {

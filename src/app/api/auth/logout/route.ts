@@ -7,14 +7,37 @@ export async function POST() {
 			{ status: 200 }
 		);
 
+		// Clear auth_token cookie (the one used in login routes)
 		response.cookies.set({
-			name: 'authToken',
+			name: 'auth_token',
 			value: '',
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
+			httpOnly: false,
+			secure: false,
 			path: '/',
 			maxAge: 0
 		});
+		
+		// Also clear authToken for backward compatibility
+		response.cookies.set({
+			name: 'authToken',
+			value: '',
+			httpOnly: false,
+			secure: false,
+			path: '/',
+			maxAge: 0
+		});
+		
+		// Also clear next-auth.session-token
+		response.cookies.set({
+			name: 'next-auth.session-token',
+			value: '',
+			httpOnly: false,
+			secure: false,
+			path: '/',
+			maxAge: 0
+		});
+		
+		console.log('Logout: cleared all auth cookies');
 
 		return response;
 	} catch (error) {

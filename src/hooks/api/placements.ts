@@ -103,38 +103,52 @@ export const useGetPlacements = (filters?: {
 					headers: {
 						'Cache-Control': 'no-cache, no-store, must-revalidate',
 						Pragma: 'no-cache',
-						Expires: '0'
+						Expires: '0',
+						'Accept': 'application/json'
 					}
 				});
 
 				if (!response.ok) {
-					const errorText = await response.text();
-					throw new Error(
-						`Failed to fetch placements: ${response.status} ${errorText}`
-					);
+					console.error(`Placements API error: ${response.status}`);
+					// Return empty array instead of throwing
+					return [];
+				}
+
+				// Check content type to ensure we're handling JSON
+				const contentType = response.headers.get('content-type');
+				if (!contentType || !contentType.includes('application/json')) {
+					console.warn('Placements API response is not JSON', contentType);
+					return [];
+				}
+
+				// Get the response as text first
+				const responseText = await response.text();
+
+				// Skip parsing if empty
+				if (!responseText.trim()) {
+					console.warn('Empty response from placements API');
+					return [];
 				}
 
 				try {
-					const data = await response.json();
+					// Then parse it as JSON
+					const data = JSON.parse(responseText);
 
 					if (!Array.isArray(data)) {
-						console.error('Expected array but got', typeof data);
+						console.warn('Placements API: expected array but got', typeof data);
 						return [];
 					}
 
 					return data;
 				} catch (parseError) {
-					throw new Error(
-						`Invalid response format from server: ${
-							parseError instanceof Error
-								? parseError.message
-								: 'Unknown parsing error'
-						}`
-					);
+					console.error('Placements API JSON parse error:', parseError, 'Response text:', responseText.substring(0, 100));
+					// Return empty array instead of throwing
+					return [];
 				}
 			} catch (error) {
 				console.error('Error fetching placements:', error);
-				throw error;
+				// Return empty array instead of throwing
+				return [];
 			}
 		},
 		staleTime: 30000, // Consider data stale after 30 seconds
@@ -156,12 +170,42 @@ export const useGetPlacement = (placementId: number | null) => {
 	return useQuery<Placement>({
 		queryKey: [PLACEMENTS_QUERY_KEY, placementId],
 		queryFn: async () => {
-			if (!placementId) throw new Error('Placement ID is required');
-			const response = await fetch(`/api/placements/${placementId}`);
-			if (!response.ok) {
-				throw new Error('Failed to fetch placement');
+			if (!placementId) {
+				console.error('Placement ID is required');
+				// Return empty placement object instead of throwing
+				return {} as Placement;
 			}
-			return response.json();
+			try {
+				const response = await fetch(`/api/placements/${placementId}`, {
+					headers: {
+						'Cache-Control': 'no-cache, no-store, must-revalidate',
+						'Accept': 'application/json'
+					}
+				});
+
+				if (!response.ok) {
+					console.error(`Error fetching placement ${placementId}: ${response.status}`);
+					return {} as Placement;
+				}
+
+				// Get text response first
+				const responseText = await response.text();
+				if (!responseText.trim()) {
+					console.warn('Empty response from placement API');
+					return {} as Placement;
+				}
+
+				try {
+					// Then parse as JSON
+					return JSON.parse(responseText);
+				} catch (parseError) {
+					console.error('Placement API JSON parse error:', parseError);
+					return {} as Placement;
+				}
+			} catch (error) {
+				console.error('Error fetching placement:', error);
+				return {} as Placement;
+			}
 		},
 		enabled: !!placementId
 	});

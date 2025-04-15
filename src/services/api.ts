@@ -1,12 +1,10 @@
 import { Student, Drive, Placement, Branch, Company } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-
 async function apiRequest<T>(
 	endpoint: string,
 	options?: RequestInit
 ): Promise<T> {
-	const response = await fetch(`${API_URL}${endpoint}`, {
+	const response = await fetch(`/api${endpoint}`, {
 		headers: {
 			'Content-Type': 'application/json'
 		},

@@ -7,8 +7,7 @@ const PUBLIC_PATHS = ['/', '/login', '/student-login', '/setup'];
 const API_PUBLIC_PATHS = [
 	'/api/auth',
 	'/api/coordinators/seed',
-	'/api/students/seed',
-	'/api/pdf-proxy'
+	'/api/students/seed'
 ];
 
 const STUDENT_ALLOWED_PATHS = [
@@ -17,8 +16,7 @@ const STUDENT_ALLOWED_PATHS = [
 	'/api/students',
 	'/api/drives',
 	'/api/placements',
-	'/api/resume',
-	'/api/pdf-proxy'
+	'/api/resume'
 ];
 
 const STATIC_PATHS = ['/_next', '/favicon.ico', '/images', '/static'];
@@ -42,10 +40,10 @@ export async function middleware(request: NextRequest) {
 
 	if (!token) {
 		if (pathname.startsWith('/api/')) {
-			return new NextResponse(
-				JSON.stringify({ error: 'Unauthorized' }),
-				{ status: 401, headers: { 'Content-Type': 'application/json' } }
-			);
+			return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
 		}
 		const loginUrl = new URL('/login', request.url);
 		loginUrl.searchParams.set('callbackUrl', pathname);
@@ -54,13 +52,17 @@ export async function middleware(request: NextRequest) {
 
 	const userRole = token.role as string;
 
+	console.log("Logged in as", userRole);
+
 	if (userRole === 'coordinator') {
 		if (pathname === '/student-login') {
 			return NextResponse.redirect(new URL('/admin-dashboard', request.url));
 		}
 	} else if (userRole === 'student') {
 		// Only allow routes in STUDENT_ALLOWED_PATHS for students
-		const isAllowed = STUDENT_ALLOWED_PATHS.some(prefix => pathname.startsWith(prefix));
+		const isAllowed = STUDENT_ALLOWED_PATHS.some(prefix =>
+			pathname.startsWith(prefix)
+		);
 		if (!isAllowed && pathname !== '/') {
 			return NextResponse.redirect(new URL('/student-dashboard', request.url));
 		}

@@ -119,8 +119,6 @@ export const authOptions: AuthOptions = {
     sessionToken: {
         name: `next-auth.session-token`,
         options: {
-            httpOnly: process.env.NODE_ENV === 'production',
-            secure: process.env.NODE_ENV === 'production',
             path: '/',
             sameSite: 'lax'
         }
@@ -128,8 +126,6 @@ export const authOptions: AuthOptions = {
     callbackUrl: {
         name: `next-auth.callback-url`,
         options: {
-            httpOnly: process.env.NODE_ENV === 'production',
-            secure: process.env.NODE_ENV === 'production',
             path: '/',
             sameSite: 'lax'
         }
@@ -137,8 +133,6 @@ export const authOptions: AuthOptions = {
     csrfToken: {
         name: `next-auth.csrf-token`,
         options: {
-            httpOnly: process.env.NODE_ENV === 'production',
-            secure: process.env.NODE_ENV === 'production',
             path: '/',
             sameSite: 'lax'
         }

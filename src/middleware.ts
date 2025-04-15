@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
 
 	const userRole = token.role as string;
 
-	console.log("Logged in as", userRole);
+	console.error("Logged in as", userRole);
 
 	if (userRole === 'coordinator') {
 		if (pathname === '/student-login') {

@@ -122,10 +122,7 @@ export const authOptions: AuthOptions = {
             httpOnly: process.env.NODE_ENV === 'production',
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            ...(process.env.NODE_ENV === 'production' && {
-                domain: '.training-and-placement-bpit.vercel.app',
-            })
+            sameSite: 'lax'
         }
     },
     callbackUrl: {
@@ -134,10 +131,7 @@ export const authOptions: AuthOptions = {
             httpOnly: process.env.NODE_ENV === 'production',
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            ...(process.env.NODE_ENV === 'production' && {
-                domain: '.training-and-placement-bpit.vercel.app',
-            })
+            sameSite: 'lax'
         }
     },
     csrfToken: {
@@ -146,10 +140,7 @@ export const authOptions: AuthOptions = {
             httpOnly: process.env.NODE_ENV === 'production',
             secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            ...(process.env.NODE_ENV === 'production' && {
-                domain: '.training-and-placement-bpit.vercel.app',
-            })
+            sameSite: 'lax'
         }
     }
 },

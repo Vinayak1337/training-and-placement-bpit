@@ -41,6 +41,12 @@ export async function middleware(request: NextRequest) {
 	const token = await getToken({ req: request });
 
 	if (!token) {
+		if (pathname.startsWith('/api/')) {
+			return new NextResponse(
+				JSON.stringify({ error: 'Unauthorized' }),
+				{ status: 401, headers: { 'Content-Type': 'application/json' } }
+			);
+		}
 		const loginUrl = new URL('/login', request.url);
 		loginUrl.searchParams.set('callbackUrl', pathname);
 		return NextResponse.redirect(loginUrl);
@@ -53,14 +59,12 @@ export async function middleware(request: NextRequest) {
 			return NextResponse.redirect(new URL('/admin-dashboard', request.url));
 		}
 	} else if (userRole === 'student') {
-		const isAllowed = STUDENT_ALLOWED_PATHS.some(prefix =>
-			pathname.startsWith(prefix)
-		);
-
+		// Only allow routes in STUDENT_ALLOWED_PATHS for students
+		const isAllowed = STUDENT_ALLOWED_PATHS.some(prefix => pathname.startsWith(prefix));
 		if (!isAllowed && pathname !== '/') {
 			return NextResponse.redirect(new URL('/student-dashboard', request.url));
 		}
-
+		// Prevent students from accessing login or admin-dashboard
 		if (pathname === '/login' || pathname.startsWith('/admin-dashboard')) {
 			return NextResponse.redirect(new URL('/student-dashboard', request.url));
 		}

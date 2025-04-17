@@ -43,17 +43,14 @@ export default function PlacementsPage() {
 	const { data: drives, isLoading: isLoadingDrives } = useGetDrives();
 	const { data: students, isLoading: isLoadingStudents } = useGetStudents();
 
-	
 	const filteredPlacements = React.useMemo(() => {
 		if (!placements || !Array.isArray(placements)) return [];
 
 		return placements.filter(placement => {
-			
 			if (statusFilter !== 'all' && placement.status !== statusFilter) {
 				return false;
 			}
 
-			
 			if (
 				driveFilter !== 'all' &&
 				placement.drive_id.toString() !== driveFilter
@@ -61,7 +58,6 @@ export default function PlacementsPage() {
 				return false;
 			}
 
-			
 			if (searchQuery) {
 				const student =
 					students && Array.isArray(students)
@@ -90,13 +86,11 @@ export default function PlacementsPage() {
 		});
 	}, [placements, statusFilter, driveFilter, searchQuery, students, drives]);
 
-	
 	const formatDate = (dateString: string | null) => {
 		if (!dateString) return 'Not specified';
 		return new Date(dateString).toLocaleDateString();
 	};
 
-	
 	const getStatusBadge = (status: PlacementStatus) => {
 		switch (status) {
 			case PlacementStatus.Applied:
@@ -118,14 +112,12 @@ export default function PlacementsPage() {
 		}
 	};
 
-	
 	const getStudentName = (studentId: string) => {
 		return (
 			students?.find(s => s.student_id === studentId)?.name || 'Unknown Student'
 		);
 	};
 
-	
 	const getDriveDetails = (driveId: number) => {
 		const drive = drives?.find(d => d.drive_id === driveId);
 		return {
@@ -147,7 +139,7 @@ export default function PlacementsPage() {
 				</div>
 				<Button
 					variant='outline'
-					onClick={() => router.push('/admin-dashboard')}
+					onClick={() => router.push('/')}
 					className='mt-4 md:mt-0'>
 					Back to Dashboard
 				</Button>

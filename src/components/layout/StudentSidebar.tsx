@@ -10,7 +10,7 @@ export default function StudentSidebar() {
 			</div>
 			<nav className='flex flex-col gap-2 px-2 py-2'>
 				<Link
-					href='/student-dashboard'
+					href='/profile'
 					className='group flex h-9 items-center rounded-lg px-3 text-muted-foreground transition-colors hover:text-foreground hover:bg-accent'>
 					<Home className='h-5 w-5' />
 					<span className='ml-3'>Dashboard</span>

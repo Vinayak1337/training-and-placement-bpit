@@ -119,37 +119,22 @@ export const authOptions: AuthOptions = {
     sessionToken: {
         name: `next-auth.session-token`,
         options: {
-            httpOnly: process.env.NODE_ENV === 'production',
-            secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            ...(process.env.NODE_ENV === 'production' && {
-                domain: '.training-and-placement-bpit.vercel.app',
-            })
+            sameSite: 'lax'
         }
     },
     callbackUrl: {
         name: `next-auth.callback-url`,
         options: {
-            httpOnly: process.env.NODE_ENV === 'production',
-            secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            ...(process.env.NODE_ENV === 'production' && {
-                domain: '.training-and-placement-bpit.vercel.app',
-            })
+            sameSite: 'lax'
         }
     },
     csrfToken: {
         name: `next-auth.csrf-token`,
         options: {
-            httpOnly: process.env.NODE_ENV === 'production',
-            secure: process.env.NODE_ENV === 'production',
             path: '/',
-            sameSite: 'lax',
-            ...(process.env.NODE_ENV === 'production' && {
-                domain: '.training-and-placement-bpit.vercel.app',
-            })
+            sameSite: 'lax'
         }
     }
 },

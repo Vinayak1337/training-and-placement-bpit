@@ -1,35 +1,12 @@
-'use client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
+export default async function Home() {
+	const session = await getServerSession(authOptions);
+	if (!session) return redirect('/login');
 
-export default function Home() {
-	const router = useRouter();
-	const { isAuthenticated, user, isLoading } = useAuth();
+	if (session.user.role === 'coordinator') return redirect('/dashboard');
 
-	useEffect(() => {
-		if (isLoading) return;
-
-		if (isAuthenticated) {
-			if (user?.role === 'coordinator') {
-				router.push('/dashboard');
-			} else if (user?.role === 'student') {
-				router.push('/student-dashboard');
-			}
-		} else {
-			router.push('/login');
-		}
-	}, [isAuthenticated, user, isLoading, router]);
-
-	return (
-		<div className='flex flex-col items-center justify-center min-h-screen'>
-			<h1 className='text-2xl font-semibold mb-4'>
-				Training & Placement Portal
-			</h1>
-			<p className='text-muted-foreground'>
-				Redirecting to appropriate page...
-			</p>
-		</div>
-	);
+	return redirect('/profile');
 }

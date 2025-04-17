@@ -62,7 +62,7 @@ export default function StudentLoginPage() {
 			}
 
 			
-			router.push('/student-dashboard');
+			router.push('/profile');
 		} catch (error) {
 			console.error('Login error:', error);
 			setErrorMessage('An unexpected error occurred. Please try again.');

@@ -3,11 +3,9 @@ import { Inter, Roboto_Mono } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { ThemeProvider } from '@/providers/theme-provider';
-import { Toaster } from 'react-hot-toast';
 import QueryProvider from '@/providers/query-provider';
 import AuthProvider from '@/providers/auth-provider';
-import Sidebar from '@/components/layout/Sidebar';
-import Header from '@/components/layout/Header';
+import { Toaster } from 'react-hot-toast';
 
 const inter = Inter({
 	subsets: ['latin'],
@@ -24,7 +22,7 @@ export const metadata: Metadata = {
 	description: 'Training and Placement Cell Management Dashboard'
 };
 
-export default function RootLayout({
+export default async function RootLayout({
 	children
 }: Readonly<{
 	children: React.ReactNode;
@@ -41,13 +39,7 @@ export default function RootLayout({
 				<AuthProvider>
 					<ThemeProvider attribute='class' defaultTheme='system' enableSystem>
 						<QueryProvider>
-							<div className='flex min-h-screen w-full flex-col bg-muted/40'>
-								<Sidebar />
-								<div className='flex flex-col sm:gap-4 sm:py-4 sm:pl-60'>
-									<Header />
-									<main className='flex-1 p-4 sm:px-6 sm:py-0'>{children}</main>
-								</div>
-							</div>
+							<main>{children}</main>
 							<Toaster position='top-right' />
 						</QueryProvider>
 					</ThemeProvider>

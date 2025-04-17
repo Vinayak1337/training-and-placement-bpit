@@ -10,8 +10,6 @@ import {
 	Briefcase
 } from 'lucide-react';
 
-
-
 export default function Sidebar() {
 	return (
 		<aside className='fixed inset-y-0 left-0 z-10 hidden w-60 flex-col border-r bg-background sm:flex'>
@@ -52,7 +50,12 @@ export default function Sidebar() {
 					<Briefcase className='h-5 w-5' />
 					<span className='ml-3'>Drives Management</span>
 				</Link>
-				{/* Add more links as needed */}
+				<Link
+					href='/placements'
+					className='group flex h-9 items-center rounded-lg px-3 text-muted-foreground transition-colors hover:text-foreground'>
+					<Briefcase className='h-5 w-5' />
+					<span className='ml-3'>Placements</span>
+				</Link>
 			</nav>
 			<nav className='mt-auto flex flex-col gap-2 px-2 sm:py-5'>
 				<Link

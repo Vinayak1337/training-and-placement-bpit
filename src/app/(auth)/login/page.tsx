@@ -27,7 +27,6 @@ import {
 } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 
-
 const formSchema = z.object({
 	email: z
 		.string()
@@ -44,7 +43,6 @@ export default function LoginPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-	
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -53,7 +51,6 @@ export default function LoginPage() {
 		}
 	});
 
-	
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setIsLoading(true);
 		setErrorMessage(null);
@@ -66,8 +63,7 @@ export default function LoginPage() {
 				return;
 			}
 
-			
-			router.push('/admin-dashboard');
+			router.push('/');
 		} catch (error) {
 			console.error('Login error:', error);
 			setErrorMessage('An unexpected error occurred. Please try again.');

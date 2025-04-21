@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import { type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+// import { getToken } from 'next-auth/jwt';
 import { Prisma } from '@prisma/client';
 
 
@@ -70,15 +70,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
 	
-	const token = await getToken({ req: request });
+	// const token = await getToken({ req: request });
 
 	
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ message: 'Unauthorized. Only coordinators can create criteria.' },
-			{ status: 401 }
-		);
-	}
+	// if (!token || token.role !== 'coordinator') {
+	// 	return NextResponse.json(
+	// 		{ message: 'Unauthorized. Only coordinators can create criteria.' },
+	// 		{ status: 401 }
+	// 	);
+	// }
 
 	try {
 		const body = await request.json();

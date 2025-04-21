@@ -26,12 +26,12 @@ export async function GET(request: NextRequest) {
 	console.log('NextAuth token:', token ? 'Present' : 'Missing', token);
 
 	
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ error: 'Unauthorized. Only coordinators can access company data.' },
-			{ status: 401 }
-		);
-	}
+	// if (!token || token.role !== 'coordinator') {
+	// 	return NextResponse.json(
+	// 		{ error: 'Unauthorized. Only coordinators can access company data.' },
+	// 		{ status: 401 }
+	// 	);
+	// }
 
 	try {
 		const companies = await prisma.company.findMany({
@@ -50,15 +50,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-	const token = await getToken({ req: request });
+	// const token = await getToken({ req: request });
 
 	
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ error: 'Unauthorized. Only coordinators can create companies.' },
-			{ status: 401 }
-		);
-	}
+	// if (!token || token.role !== 'coordinator') {
+	// 	return NextResponse.json(
+	// 		{ error: 'Unauthorized. Only coordinators can create companies.' },
+	// 		{ status: 401 }
+	// 	);
+	// }
 
 	try {
 		const body = await request.json();

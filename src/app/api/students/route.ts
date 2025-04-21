@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import bcrypt from 'bcryptjs';
 import { type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+// import { getToken } from 'next-auth/jwt';
 
 const studentCreateSchema = z.object({
 	student_id: z.string().min(1, 'Student ID is required').max(50),
@@ -64,15 +64,15 @@ export async function GET() {
 // TODO: Add authentication check (Admin only)
 export async function POST(request: NextRequest) {
 	// Add authentication check
-	const token = await getToken({ req: request });
+	// const token = await getToken({ req: request });
 
 	// Check if the user is authenticated and has the coordinator role
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ message: 'Unauthorized. Only coordinators can create students.' },
-			{ status: 401 }
-		);
-	}
+	// if (!token || token.role !== 'coordinator') {
+	// 	return NextResponse.json(
+	// 		{ message: 'Unauthorized. Only coordinators can create students.' },
+	// 		{ status: 401 }
+	// 	);
+	// }
 
 	try {
 		const body = await request.json();

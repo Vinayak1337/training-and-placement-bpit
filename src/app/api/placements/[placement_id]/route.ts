@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import { PlacementStatus } from '@/hooks/api/placements';
+import {
+	forbiddenResponse,
+	isAuthResponse,
+	isCoordinator,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const placementUpdateSchema = z.object({
 	status: z.nativeEnum(PlacementStatus),
@@ -27,6 +34,9 @@ export async function GET(
 	{ params }: { params: Promise<{ placement_id: string }> }
 ) {
 	const { placement_id } = await params;
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const placementId = parseInt(placement_id, 10);
 		if (isNaN(placementId)) {
@@ -60,6 +70,10 @@ export async function GET(
 			);
 		}
 
+		if (!isCoordinator(auth) && auth.id !== placement.student_id) {
+			return forbiddenResponse('Students can only access their own placement');
+		}
+
 		return NextResponse.json(placement);
 	} catch (error) {
 		console.error('Error fetching placement:', error);
@@ -75,6 +89,9 @@ export async function PUT(
 	{ params }: { params: Promise<{ placement_id: string }> }
 ) {
 	const { placement_id } = await params;
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const placementId = parseInt(placement_id, 10);
 		if (isNaN(placementId)) {
@@ -164,6 +181,9 @@ export async function DELETE(
 	{ params }: { params: Promise<{ placement_id: string }> }
 ) {
 	const { placement_id } = await params;
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const placementId = parseInt(placement_id, 10);
 		if (isNaN(placementId)) {

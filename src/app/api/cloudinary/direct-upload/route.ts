@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
+import { isAuthResponse, requireAnyUser } from '@/lib/api-auth';
 
-export async function POST() {
+export async function POST(request: Request) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		return NextResponse.json(
 			{

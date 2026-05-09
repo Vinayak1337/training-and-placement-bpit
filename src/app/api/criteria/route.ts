@@ -2,8 +2,12 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import { type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import { Prisma } from '@prisma/client';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 
 const criteriaSchema = z.object({
@@ -31,7 +35,10 @@ type CriteriaBranch = {
 };
 
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const criteria = await prisma.criteria.findMany({
 			orderBy: {
@@ -69,16 +76,8 @@ export async function GET() {
 
 
 export async function POST(request: NextRequest) {
-	
-	const token = await getToken({ req: request });
-
-	
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ message: 'Unauthorized. Only coordinators can create criteria.' },
-			{ status: 401 }
-		);
-	}
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
 
 	try {
 		const body = await request.json();

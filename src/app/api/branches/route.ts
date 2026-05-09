@@ -1,12 +1,20 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const branchCreateSchema = z.object({
 	branch_name: z.string().min(1, 'Branch name is required').max(100)
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const branches = await prisma.branch.findMany({
 			orderBy: {
@@ -25,6 +33,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const rawData = await request.json();
 		const data = branchCreateSchema.parse(rawData);

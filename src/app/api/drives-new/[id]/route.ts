@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const driveUpdateSchema = z.object({
 	job_title: z.string().min(1, 'Job title is required').max(255),
@@ -19,6 +24,9 @@ export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	const { id } = await params;
 	const driveId = parseInt(id);
 
@@ -56,6 +64,9 @@ export async function PUT(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { id } = await params;
 		const driveId = parseInt(id);
@@ -107,6 +118,9 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { id } = await params;
 		const driveId = parseInt(id);

@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
-
+import { canAccessStudent, isAuthResponse, requireAnyUser } from '@/lib/api-auth';
 
 export async function PATCH(
 	request: Request,
@@ -10,23 +8,18 @@ export async function PATCH(
 ) {
 	const { student_id } = await params;
 	try {
-		const session = await getServerSession(authOptions);
+		const auth = await requireAnyUser(request);
+		if (isAuthResponse(auth)) return auth;
+
 		const studentId = student_id;
 
-		
-		if (!session) {
-			return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-		}
-
-		
-		if (session.user.role !== 'coordinator' && session.user.id !== studentId) {
+		if (!canAccessStudent(auth, studentId)) {
 			return NextResponse.json(
 				{ message: 'Forbidden: You can only update your own resume' },
 				{ status: 403 }
 			);
 		}
 
-		
 		const { resume_url } = await request.json();
 
 		if (!resume_url) {
@@ -36,7 +29,6 @@ export async function PATCH(
 			);
 		}
 
-		
 		const student = await prisma.student.findUnique({
 			where: { student_id: studentId }
 		});
@@ -48,7 +40,6 @@ export async function PATCH(
 			);
 		}
 
-		
 		const updatedStudent = await prisma.student.update({
 			where: { student_id: studentId },
 			data: { resume_url }

@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import React from 'react';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth-options';
@@ -11,6 +11,7 @@ export default async function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const session = await getServerSession(authOptions);
+	if (!session) redirect('/login');
 	if (session && session.user.role !== 'coordinator') return notFound();
 
 	return (

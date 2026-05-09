@@ -1,5 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 // GET: Fetch a specific drive-criteria connection
 
@@ -7,6 +12,9 @@ export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ drive_id: string; criteria_id: string }> }
 ) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	const { drive_id, criteria_id } = await params;
 	const driveId = parseInt(drive_id);
 	const criteriaId = parseInt(criteria_id);
@@ -49,6 +57,9 @@ export async function PUT(
 	request: NextRequest,
 	{ params }: { params: Promise<{ drive_id: string; criteria_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { drive_id, criteria_id } = await params;
 		const driveId = parseInt(drive_id);
@@ -120,6 +131,9 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ drive_id: string; criteria_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { drive_id, criteria_id } = await params;
 		const driveId = parseInt(drive_id);

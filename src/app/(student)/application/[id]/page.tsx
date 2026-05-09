@@ -75,7 +75,7 @@ export default function ApplicationDetailPage() {
 
 				
 				if (data.student_id !== session?.user?.id) {
-					router.push('/student-dashboard');
+					router.push('/profile');
 					return;
 				}
 
@@ -139,12 +139,12 @@ export default function ApplicationDetailPage() {
 					<p className='text-muted-foreground'>
 						{error || 'Application not found'}
 					</p>
-					<Button
-						variant='outline'
-						className='mt-4'
-						onClick={() => router.push('/student-dashboard')}>
-						Back to Dashboard
-					</Button>
+						<Button
+							variant='outline'
+							className='mt-4'
+							onClick={() => router.push('/profile')}>
+							Back to Dashboard
+						</Button>
 				</div>
 			</div>
 		);
@@ -153,10 +153,10 @@ export default function ApplicationDetailPage() {
 	return (
 		<div className='container py-10'>
 			<div className='flex items-center mb-6'>
-				<Button
-					variant='ghost'
-					className='mr-2 p-2'
-					onClick={() => router.push('/student-dashboard')}>
+					<Button
+						variant='ghost'
+						className='mr-2 p-2'
+						onClick={() => router.push('/profile')}>
 					<ArrowLeft className='h-4 w-4' />
 				</Button>
 				<div>
@@ -274,12 +274,12 @@ export default function ApplicationDetailPage() {
 						</CardContent>
 
 						<CardFooter>
-							<Button
-								variant='outline'
-								className='w-full'
-								onClick={() => router.push('/student-dashboard')}>
-								Back to Dashboard
-							</Button>
+								<Button
+									variant='outline'
+									className='w-full'
+									onClick={() => router.push('/profile')}>
+									Back to Dashboard
+								</Button>
 						</CardFooter>
 					</Card>
 				</div>

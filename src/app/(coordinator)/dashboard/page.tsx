@@ -24,12 +24,13 @@ import {
 	Clock
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { Student, Drive, Placement, Branch, PlacementStatus } from '@/types';
+import { Student, Drive, Placement, Branch, Company, PlacementStatus } from '@/types';
 import {
 	fetchStudents,
 	fetchDrives,
 	fetchPlacements,
-	fetchBranches
+	fetchBranches,
+	fetchCompanies
 } from '@/services/api';
 import { formatDate } from '@/lib/utils';
 
@@ -52,6 +53,7 @@ type NormalizedDrive = Drive & {
 
 type NormalizedPlacement = Omit<Placement, 'status'> & {
 	student_id?: string;
+	drive_id?: number;
 	package_lpa_confirmed?: number;
 	status: Placement['status'] | PlacementStatus;
 };
@@ -75,14 +77,18 @@ function useAdminDashboardData() {
 	const { data: placementsData = [] } = useQuery<NormalizedPlacement[]>({
 		queryKey: ['placements'],
 		queryFn: fetchPlacements,
-		staleTime: 0,
-		refetchOnMount: true,
-		refetchInterval: 2000
+		staleTime: 30000,
+		refetchOnMount: true
 	});
 
 	const { data: branchesData = [] } = useQuery<NormalizedBranch[]>({
 		queryKey: ['branches'],
 		queryFn: fetchBranches
+	});
+
+	const { data: companiesData = [] } = useQuery<Company[]>({
+		queryKey: ['companies'],
+		queryFn: fetchCompanies
 	});
 
 	const students = React.useMemo(() => studentsData || [], [studentsData]);
@@ -92,23 +98,15 @@ function useAdminDashboardData() {
 		[placementsData]
 	);
 	const branches = React.useMemo(() => branchesData || [], [branchesData]);
+	const companies = React.useMemo(() => companiesData || [], [companiesData]);
 
 	const totalStudents = students.length;
 	const totalDrives = drives.length;
-	const totalCompanies = React.useMemo(
-		() =>
-			drives.length
-				? new Set(drives.map(drive => drive.company_id || drive.id)).size
-				: 0,
-		[drives]
-	);
+	const totalCompanies = companies.length;
 	const totalApplications = placements.length;
 
 	const isPlacementAccepted = React.useCallback((p: NormalizedPlacement) => {
-		return (
-			p.status === PlacementStatus.Offer_Accepted ||
-			p.status === PlacementStatus.Offered
-		);
+		return p.status === PlacementStatus.Offer_Accepted;
 	}, []);
 
 	const placedStudents = React.useMemo(() => {
@@ -130,55 +128,29 @@ function useAdminDashboardData() {
 	const averagePackage = React.useMemo(() => {
 		if (placements.length === 0) return 0;
 
-		console.log('Calculating avg package with placements:', placements);
+		const placedPackages = placements
+			.filter(isPlacementAccepted)
+			.map(record => {
+				const driveId = Number(record.drive_id ?? record.driveId);
+				const matchingDrive = drives.find(
+					d => Number(d.drive_id ?? d.id) === driveId
+				);
+				const packageValue =
+					record.package_lpa_confirmed ?? matchingDrive?.package_lpa;
+				const numericPackage = Number(packageValue);
 
-		const placedRecords = placements.filter(p => {
-			const isRelevantStatus =
-				p.status === PlacementStatus.Offer_Accepted ||
-				p.status === PlacementStatus.Offered;
+				return Number.isFinite(numericPackage) && numericPackage > 0
+					? numericPackage
+					: null;
+			})
+			.filter((value): value is number => value !== null);
 
-			// Get drive details if needed
-			const driveId = p.driveId;
-			const matchingDrive = drives.find(d => (d.drive_id || d.id) === driveId);
-			const drivePackage = matchingDrive?.package_lpa;
+		if (placedPackages.length === 0) return 0;
 
-			// Check if package exists in either field
-			const hasPackage =
-				(p.package_lpa_confirmed !== null &&
-					p.package_lpa_confirmed !== undefined) ||
-				(drivePackage !== null && drivePackage !== undefined);
+		const totalPackage = placedPackages.reduce((sum, value) => sum + value, 0);
 
-			console.log(
-				`Placement: status=${p.status}, package_confirmed=${
-					p.package_lpa_confirmed
-				}, drive_package=${drivePackage}, included=${
-					isRelevantStatus && hasPackage
-				}`
-			);
-
-			return isRelevantStatus && hasPackage;
-		});
-
-		console.log('Filtered placed records:', placedRecords);
-
-		if (placedRecords.length === 0) return 0;
-
-		const totalPackage = placedRecords.reduce((sum, record) => {
-			const driveId = record.driveId;
-			const matchingDrive = drives.find(d => (d.drive_id || d.id) === driveId);
-			const drivePackage = matchingDrive?.package_lpa || 0;
-
-			return sum + (record.package_lpa_confirmed ?? drivePackage);
-		}, 0);
-
-		console.log(
-			`Total package: ${totalPackage}, Records: ${placedRecords.length}, Avg: ${
-				totalPackage / placedRecords.length
-			}`
-		);
-
-		return totalPackage / placedRecords.length;
-	}, [placements, drives]);
+		return totalPackage / placedPackages.length;
+	}, [placements, drives, isPlacementAccepted]);
 
 	const upcomingDrives = React.useMemo(() => {
 		if (drives.length === 0) return [];

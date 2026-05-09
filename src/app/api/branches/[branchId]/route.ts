@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const branchUpdateSchema = z.object({
 	branch_name: z.string().min(1, 'Branch name is required').max(100)
@@ -10,6 +15,9 @@ export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ branchId: string }> }
 ) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	const { branchId: id } = await params;
 	const branchId = parseInt(id);
 
@@ -35,6 +43,9 @@ export async function PUT(
 	request: Request,
 	{ params }: { params: Promise<{ branchId: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { branchId: id } = await params;
 		const branchId = parseInt(id);
@@ -79,6 +90,9 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ branchId: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { branchId: id } = await params;
 		const branchId = parseInt(id);

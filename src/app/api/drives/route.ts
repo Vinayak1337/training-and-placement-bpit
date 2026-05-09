@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const driveCreateSchema = z.object({
 	company_id: z.number().int().positive('Company ID is required'),
@@ -21,7 +26,10 @@ const driveCreateSchema = z.object({
 	description: z.string().optional().nullable()
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const drives = await prisma.drive.findMany({
 			orderBy: { drive_id: 'desc' },
@@ -53,6 +61,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const body = await request.json();
 

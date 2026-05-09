@@ -26,6 +26,7 @@ import {
 	CardFooter
 } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import { DEMO_COORDINATOR } from '@/lib/demo-accounts';
 
 const formSchema = z.object({
 	email: z
@@ -70,6 +71,13 @@ export default function LoginPage() {
 		} finally {
 			setIsLoading(false);
 		}
+	}
+
+	function useDemoCredentials() {
+		form.setValue('email', DEMO_COORDINATOR.email, { shouldValidate: true });
+		form.setValue('password', DEMO_COORDINATOR.password, {
+			shouldValidate: true
+		});
 	}
 
 	return (
@@ -119,14 +127,32 @@ export default function LoginPage() {
 									{errorMessage}
 								</p>
 							)}
+							<div className='rounded-md border bg-muted/40 p-3 text-sm'>
+								<div className='mb-2 flex items-center justify-between gap-3'>
+									<p className='font-medium'>Demo coordinator</p>
+									<Button
+										type='button'
+										variant='outline'
+										size='sm'
+										onClick={useDemoCredentials}>
+										Use creds
+									</Button>
+								</div>
+								<p className='text-muted-foreground'>
+									Email: {DEMO_COORDINATOR.email}
+								</p>
+								<p className='text-muted-foreground'>
+									Password: {DEMO_COORDINATOR.password}
+								</p>
+							</div>
 							<Button type='submit' className='w-full' disabled={isLoading}>
 								{isLoading ? 'Logging in...' : 'Login'}
 							</Button>
 						</form>
 					</Form>
 				</CardContent>
-				<CardFooter className='flex justify-center flex-col'>
-					<p className='text-sm text-muted-foreground mb-2'>
+				<CardFooter className='flex flex-col justify-center gap-2'>
+					<p className='text-sm text-muted-foreground'>
 						Are you a student?{' '}
 						<Link
 							href='/student-login'
@@ -134,12 +160,9 @@ export default function LoginPage() {
 							Login here
 						</Link>
 					</p>
-					<p className='text-sm text-muted-foreground'>
-						Need test accounts?{' '}
-						<Link href='/setup' className='text-primary hover:underline'>
-							Setup test accounts
-						</Link>
-					</p>
+					<Link href='/setup' className='text-sm text-primary hover:underline'>
+						Setup demo accounts
+					</Link>
 				</CardFooter>
 			</Card>
 		</div>

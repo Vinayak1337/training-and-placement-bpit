@@ -60,16 +60,16 @@ export default function MainNav() {
 
 	
 	const studentNavItems: NavItem[] = [
-		{
-			title: 'Student Dashboard',
-			href: '/student-dashboard',
-			icon: <LayoutDashboard className='mr-2 h-4 w-4' />
-		},
-		{
-			title: 'My Applications',
-			href: '/student-dashboard?tab=applications',
-			icon: <BookOpen className='mr-2 h-4 w-4' />
-		}
+			{
+				title: 'Student Dashboard',
+				href: '/profile',
+				icon: <LayoutDashboard className='mr-2 h-4 w-4' />
+			},
+			{
+				title: 'My Applications',
+				href: '/profile',
+				icon: <BookOpen className='mr-2 h-4 w-4' />
+			}
 	];
 
 	

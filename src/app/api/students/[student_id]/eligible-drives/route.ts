@@ -1,5 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import {
+	canAccessStudent,
+	forbiddenResponse,
+	isAuthResponse,
+	requireAnyUser
+} from '@/lib/api-auth';
 
 export async function GET(
 	request: Request,
@@ -8,6 +14,9 @@ export async function GET(
 	const { student_id } = await params;
 	try {
 		const studentId = student_id;
+		const auth = await requireAnyUser(request);
+		if (isAuthResponse(auth)) return auth;
+		if (!canAccessStudent(auth, studentId)) return forbiddenResponse();
 
 		const student = await prisma.student.findUnique({
 			where: { student_id: studentId },

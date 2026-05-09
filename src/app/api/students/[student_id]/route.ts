@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
+import {
+	canAccessStudent,
+	forbiddenResponse,
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const studentUpdateSchema = z.object({
 	name: z.string().min(1, 'Name is required').max(255),
@@ -24,6 +31,9 @@ export async function GET(
 ) {
 	try {
 		const { student_id: studentId } = await params;
+		const auth = await requireAnyUser(request);
+		if (isAuthResponse(auth)) return auth;
+		if (!canAccessStudent(auth, studentId)) return forbiddenResponse();
 
 		const student = await prisma.student.findUnique({
 			where: { student_id: studentId },
@@ -54,6 +64,9 @@ export async function PUT(
 	request: Request,
 	{ params }: { params: Promise<{ student_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { student_id: studentId } = await params;
 		const body = await request.json();
@@ -152,6 +165,9 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ student_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { student_id: studentId } = await params;
 

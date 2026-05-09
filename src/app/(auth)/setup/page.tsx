@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import * as React from 'react';
+import Link from 'next/link';
+import { toast } from 'react-hot-toast';
+import { CheckCircle2, KeyRound, RefreshCcw, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
 	Card,
@@ -10,159 +13,169 @@ import {
 	CardHeader,
 	CardTitle
 } from '@/components/ui/card';
-import { toast } from 'react-toastify';
-import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { DEMO_COORDINATOR, DEMO_STUDENT } from '@/lib/demo-accounts';
 
-interface SetupResponse {
-	success: boolean;
-	message: string;
-}
+type SetupStatus = {
+	coordinatorReady: boolean;
+	studentReady: boolean;
+};
 
 export default function SetupPage() {
-	const [isCreatingCoordinator, setIsCreatingCoordinator] = useState(false);
-	const [isCreatingStudent, setIsCreatingStudent] = useState(false);
-	const [coordinatorResult, setCoordinatorResult] =
-		useState<SetupResponse | null>(null);
-	const [studentResult, setStudentResult] = useState<SetupResponse | null>(
-		null
-	);
+	const [status, setStatus] = React.useState<SetupStatus | null>(null);
+	const [isLoading, setIsLoading] = React.useState(true);
+	const [isSaving, setIsSaving] = React.useState(false);
 
-	const createCoordinatorAccount = async () => {
-		setIsCreatingCoordinator(true);
+	const loadStatus = React.useCallback(async () => {
 		try {
-			const response = await fetch('/api/coordinators/seed', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-
-			const data = await response.json();
-			setCoordinatorResult(data);
-
-			if (response.ok) {
-				toast.success('Coordinator account created successfully!');
-			} else {
-				toast.error('Failed to create coordinator account');
-			}
-		} catch (error) {
-			console.error('Error creating coordinator account:', error);
-			toast.error('An error occurred while creating the coordinator account');
+			const response = await fetch('/api/demo/setup', { cache: 'no-store' });
+			if (!response.ok) throw new Error('Failed to load status');
+			setStatus(await response.json());
+		} catch {
+			setStatus(null);
 		} finally {
-			setIsCreatingCoordinator(false);
+			setIsLoading(false);
+		}
+	}, []);
+
+	React.useEffect(() => {
+		loadStatus();
+	}, [loadStatus]);
+
+	const setupDemoAccounts = async () => {
+		setIsSaving(true);
+		try {
+			const response = await fetch('/api/demo/setup', { method: 'POST' });
+			const data = await response.json().catch(() => ({}));
+
+			if (!response.ok) {
+				throw new Error(data.message || 'Failed to set up demo accounts');
+			}
+
+			toast.success('Demo accounts are ready');
+			await loadStatus();
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: 'Failed to set up demo accounts'
+			);
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
-	const createStudentAccount = async () => {
-		setIsCreatingStudent(true);
-		try {
-			const response = await fetch('/api/students/seed', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				}
-			});
-
-			const data = await response.json();
-			setStudentResult(data);
-
-			if (response.ok) {
-				toast.success('Student account created successfully!');
-			} else {
-				toast.error('Failed to create student account');
-			}
-		} catch (error) {
-			console.error('Error creating student account:', error);
-			toast.error('An error occurred while creating the student account');
-		} finally {
-			setIsCreatingStudent(false);
-		}
-	};
+	const ready = status?.coordinatorReady && status?.studentReady;
 
 	return (
-		<div className='flex min-h-screen flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-950'>
-			<h1 className='text-3xl font-bold mb-8'>Setup Test Accounts</h1>
-
-			<div className='grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl'>
-				<Card>
-					<CardHeader>
-						<CardTitle>Coordinator Account</CardTitle>
-						<CardDescription>Create a test coordinator account</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<p className='mb-4'>
-							This will create a coordinator account with the following
-							credentials:
+		<div className='flex min-h-screen items-center justify-center bg-gray-100 p-4 dark:bg-gray-950'>
+			<div className='w-full max-w-5xl space-y-6'>
+				<div className='flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between'>
+					<div>
+						<h1 className='text-3xl font-bold'>Demo Account Setup</h1>
+						<p className='mt-2 text-muted-foreground'>
+							Reset the demo login accounts used by this dashboard.
 						</p>
-						<div className='bg-gray-100 dark:bg-gray-800 p-3 rounded-md'>
-							<p>
-								<strong>Email:</strong> t&p@bpit.edu.in
-							</p>
-							<p>
-								<strong>Password:</strong> t&p@2027
+					</div>
+					<Badge variant={ready ? 'default' : 'outline'} className='w-fit'>
+						{isLoading ? 'Checking...' : ready ? 'Ready' : 'Setup needed'}
+					</Badge>
+				</div>
+
+				<div className='grid gap-4 md:grid-cols-2'>
+					<Card>
+						<CardHeader>
+							<CardTitle className='flex items-center gap-2'>
+								<KeyRound className='h-5 w-5' />
+								Coordinator
+							</CardTitle>
+							<CardDescription>Admin dashboard demo login</CardDescription>
+						</CardHeader>
+						<CardContent className='space-y-3 text-sm'>
+							<div className='rounded-md border bg-muted/40 p-3'>
+								<p>
+									<span className='font-medium'>Email:</span>{' '}
+									{DEMO_COORDINATOR.email}
+								</p>
+								<p>
+									<span className='font-medium'>Password:</span>{' '}
+									{DEMO_COORDINATOR.password}
+								</p>
+							</div>
+							{status?.coordinatorReady && (
+								<p className='flex items-center gap-2 text-sm text-green-700 dark:text-green-400'>
+									<CheckCircle2 className='h-4 w-4' />
+									Coordinator account exists
+								</p>
+							)}
+						</CardContent>
+						<CardFooter>
+							<Button asChild variant='outline' className='w-full'>
+								<Link href='/login'>Coordinator Login</Link>
+							</Button>
+						</CardFooter>
+					</Card>
+
+					<Card>
+						<CardHeader>
+							<CardTitle className='flex items-center gap-2'>
+								<UserRound className='h-5 w-5' />
+								Student
+							</CardTitle>
+							<CardDescription>Student portal demo login</CardDescription>
+						</CardHeader>
+						<CardContent className='space-y-3 text-sm'>
+							<div className='rounded-md border bg-muted/40 p-3'>
+								<p>
+									<span className='font-medium'>Student ID:</span>{' '}
+									{DEMO_STUDENT.student_id}
+								</p>
+								<p>
+									<span className='font-medium'>Password:</span>{' '}
+									{DEMO_STUDENT.password}
+								</p>
+							</div>
+							{status?.studentReady && (
+								<p className='flex items-center gap-2 text-sm text-green-700 dark:text-green-400'>
+									<CheckCircle2 className='h-4 w-4' />
+									Student account exists
+								</p>
+							)}
+						</CardContent>
+						<CardFooter>
+							<Button asChild variant='outline' className='w-full'>
+								<Link href='/student-login'>Student Login</Link>
+							</Button>
+						</CardFooter>
+					</Card>
+				</div>
+
+				<Card>
+					<CardContent className='flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between'>
+						<div>
+							<p className='font-medium'>Create or reset demo accounts</p>
+							<p className='text-sm text-muted-foreground'>
+								This restores the fixed demo credentials shown above.
 							</p>
 						</div>
-					</CardContent>
-					<CardFooter className='flex flex-col items-stretch gap-4'>
-						<Button
-							onClick={createCoordinatorAccount}
-							disabled={isCreatingCoordinator}
-							className='w-full'>
-							{isCreatingCoordinator
-								? 'Creating...'
-								: 'Create Coordinator Account'}
+						<Button onClick={setupDemoAccounts} disabled={isSaving}>
+							<RefreshCcw className='mr-2 h-4 w-4' />
+							{isSaving ? 'Setting up...' : 'Setup Demo Accounts'}
 						</Button>
-
-						{coordinatorResult && (
-							<div className='text-sm p-3 bg-green-50 dark:bg-green-900/20 rounded-md'>
-								<p>{coordinatorResult.message}</p>
-							</div>
-						)}
-					</CardFooter>
+					</CardContent>
 				</Card>
 
-				<Card>
-					<CardHeader>
-						<CardTitle>Student Account</CardTitle>
-						<CardDescription>Create a test student account</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<p className='mb-4'>
-							This will create a student account with the following credentials:
-						</p>
-						<div className='bg-gray-100 dark:bg-gray-800 p-3 rounded-md'>
-							<p>
-								<strong>Student ID:</strong> TEST001
-							</p>
-							<p>
-								<strong>Password:</strong> password123
-							</p>
-						</div>
-					</CardContent>
-					<CardFooter className='flex flex-col items-stretch gap-4'>
-						<Button
-							onClick={createStudentAccount}
-							disabled={isCreatingStudent}
-							className='w-full'>
-							{isCreatingStudent ? 'Creating...' : 'Create Student Account'}
-						</Button>
+				<Separator />
 
-						{studentResult && (
-							<div className='text-sm p-3 bg-green-50 dark:bg-green-900/20 rounded-md'>
-								<p>{studentResult.message}</p>
-							</div>
-						)}
-					</CardFooter>
-				</Card>
-			</div>
-
-			<div className='mt-8 flex gap-4'>
-				<Button asChild variant='outline'>
-					<Link href='/login'>Coordinator Login</Link>
-				</Button>
-				<Button asChild variant='outline'>
-					<Link href='/student-login'>Student Login</Link>
-				</Button>
+				<div className='flex justify-center gap-4'>
+					<Button asChild variant='ghost'>
+						<Link href='/login'>Coordinator Login</Link>
+					</Button>
+					<Button asChild variant='ghost'>
+						<Link href='/student-login'>Student Login</Link>
+					</Button>
+				</div>
 			</div>
 		</div>
 	);

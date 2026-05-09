@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import { type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { isAuthResponse, requireCoordinator } from '@/lib/api-auth';
 
 const companySchema = z.object({
 	name: z.string().min(1, 'Company name is required').max(255),
@@ -21,17 +21,8 @@ const companySchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-	const token = await getToken({ req: request });
-
-	console.log('NextAuth token:', token ? 'Present' : 'Missing', token);
-
-	
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ error: 'Unauthorized. Only coordinators can access company data.' },
-			{ status: 401 }
-		);
-	}
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
 
 	try {
 		const companies = await prisma.company.findMany({
@@ -50,15 +41,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-	const token = await getToken({ req: request });
-
-	
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ error: 'Unauthorized. Only coordinators can create companies.' },
-			{ status: 401 }
-		);
-	}
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
 
 	try {
 		const body = await request.json();

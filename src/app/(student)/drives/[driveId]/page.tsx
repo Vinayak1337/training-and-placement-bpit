@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter, useParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,29 +31,48 @@ export default function DriveDetailsPage() {
 	const studentId = session?.user?.id;
 
 	const { data: drive, isLoading: driveLoading } = useGetDrive(driveId);
+	const { data: student, isLoading: studentLoading } = useQuery<{
+		resume_url: string | null;
+	}>({
+		queryKey: ['students', studentId],
+		enabled: !!studentId,
+		queryFn: async () => {
+			const response = await fetch(`/api/students/${studentId}`);
+			if (!response.ok) throw new Error('Failed to fetch student profile');
+			return response.json();
+		}
+	});
 	const { data: myApplications, isLoading: applicationsLoading } =
 		useGetPlacements({
-			studentId: studentId || '',
+			studentId: studentId ?? null,
 			driveId: driveId
 		});
 
 	const createApplication = useCreatePlacement();
-	const isLoading = driveLoading || applicationsLoading;
+	const isLoading = driveLoading || applicationsLoading || studentLoading;
+	const hasResume = Boolean(student?.resume_url);
 
-	const hasApplied = React.useMemo(() => {
-		if (!myApplications || !Array.isArray(myApplications)) return false;
-		return myApplications.some(app => app.drive_id === driveId);
+	const currentApplication = React.useMemo(() => {
+		if (!myApplications || !Array.isArray(myApplications)) return null;
+		return myApplications.find(app => app.drive_id === driveId) ?? null;
 	}, [myApplications, driveId]);
+
+	const hasApplied = Boolean(currentApplication);
 
 	const applicationStatus = React.useMemo(() => {
-		if (!myApplications || !Array.isArray(myApplications)) return null;
-		const application = myApplications.find(app => app.drive_id === driveId);
-		return application ? application.status : null;
-	}, [myApplications, driveId]);
+		return currentApplication ? currentApplication.status : null;
+	}, [currentApplication]);
+
 
 	const handleApply = () => {
 		if (!studentId) {
 			toast.error('Please log in to apply');
+			return;
+		}
+
+		if (!hasResume) {
+			toast.error('Please upload your resume before applying');
+			router.push('/profile');
 			return;
 		}
 
@@ -264,17 +284,20 @@ export default function DriveDetailsPage() {
 
 			<div className='flex gap-4'>
 				{!hasApplied ? (
-					<Button
-						className='w-full sm:w-auto'
-						onClick={handleApply}
-						disabled={hasApplied || createApplication.isPending}>
-						Apply Now
-					</Button>
+						<Button
+							className='w-full sm:w-auto'
+							onClick={handleApply}
+							disabled={!hasResume || hasApplied || createApplication.isPending}>
+							{hasResume ? 'Apply Now' : 'Upload Resume First'}
+						</Button>
 				) : (
 					<Button
-						variant='outline'
-						className='w-full sm:w-auto'
-						onClick={() => router.push(`/application/${driveId}`)}>
+							variant='outline'
+							className='w-full sm:w-auto'
+							onClick={() =>
+								currentApplication &&
+								router.push(`/application/${currentApplication.placement_id}`)
+							}>
 						<ExternalLink className='h-4 w-4 mr-2' />
 						View Application
 					</Button>

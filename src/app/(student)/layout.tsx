@@ -3,7 +3,7 @@ import StudentSidebar from '@/components/layout/StudentSidebar';
 import { authOptions } from '@/lib/auth-options';
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
 	title: 'Student Dashboard - T&P Cell',
@@ -16,6 +16,7 @@ export default async function StudentDashboardLayout({
 	children: React.ReactNode;
 }) {
 	const session = await getServerSession(authOptions);
+	if (!session) redirect('/student-login');
 	if (session && session.user.role !== 'student') return notFound();
 
 	return (

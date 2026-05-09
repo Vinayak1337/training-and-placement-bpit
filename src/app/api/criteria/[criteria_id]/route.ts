@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import {
+	isAuthResponse,
+	requireAnyUser,
+	requireCoordinator
+} from '@/lib/api-auth';
 
 const criteriaUpdateSchema = z.object({
 	description: z.string().max(255).optional().nullable(),
@@ -18,6 +23,9 @@ export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ criteria_id: string }> }
 ) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	const { criteria_id: id } = await params;
 	const criteriaId = parseInt(id);
 
@@ -50,6 +58,9 @@ export async function PUT(
 	request: Request,
 	{ params }: { params: Promise<{ criteria_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { criteria_id: id } = await params;
 		const criteriaId = parseInt(id);
@@ -110,6 +121,9 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ criteria_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { criteria_id: id } = await params;
 		const criteriaId = parseInt(id);

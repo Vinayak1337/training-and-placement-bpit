@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { isAuthResponse, requireCoordinator } from '@/lib/api-auth';
 
 const companyUpdateSchema = z.object({
 	name: z.string().min(1, 'Company name is required').max(255),
@@ -13,6 +14,9 @@ export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ company_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	const { company_id: id } = await params;
 	const companyId = parseInt(id);
 
@@ -38,6 +42,9 @@ export async function PUT(
 	request: Request,
 	{ params }: { params: Promise<{ company_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { company_id: id } = await params;
 		const companyId = parseInt(id);
@@ -85,6 +92,9 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ company_id: string }> }
 ) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { company_id: id } = await params;
 		const companyId = parseInt(id);

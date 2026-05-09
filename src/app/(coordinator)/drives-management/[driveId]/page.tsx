@@ -12,7 +12,6 @@ import {
 	Clock,
 	Edit,
 	Users,
-	FileText,
 	Trash2
 } from 'lucide-react';
 import { useGetDrive, useDeleteDrive } from '@/hooks/api/drives';
@@ -216,24 +215,16 @@ export default function DriveManagementPage() {
 				</CardContent>
 			</Card>
 
-			<div className='flex flex-col sm:flex-row gap-4'>
-				<Button
-					className='w-full sm:w-auto'
-					onClick={() =>
+				<div className='flex flex-col sm:flex-row gap-4'>
+					<Button
+						className='w-full sm:w-auto'
+						onClick={() =>
 						router.push(`/drives-management/${driveId}/applications`)
 					}>
-					<Users className='h-4 w-4 mr-2' />
-					Manage Applications
-				</Button>
-
-				<Button
-					variant='outline'
-					className='w-full sm:w-auto'
-					onClick={() => router.push(`/application/${driveId}`)}>
-					<FileText className='h-4 w-4 mr-2' />
-					Preview Application Form
-				</Button>
-			</div>
+						<Users className='h-4 w-4 mr-2' />
+						Manage Applications
+					</Button>
+				</div>
 		</div>
 	);
 }

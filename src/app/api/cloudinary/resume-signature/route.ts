@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import { isAuthResponse, requireAnyUser } from '@/lib/api-auth';
 
 cloudinary.config({
 	cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
@@ -9,6 +10,9 @@ cloudinary.config({
 });
 
 export async function POST(request: NextRequest) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const body = await request.json();
 

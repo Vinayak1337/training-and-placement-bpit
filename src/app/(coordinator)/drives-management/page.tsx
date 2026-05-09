@@ -104,7 +104,73 @@ export default function DrivesManagementPage() {
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Table>
+						<div className='grid gap-3 md:hidden'>
+							{drives.map(drive => (
+								<div
+									key={drive.drive_id}
+									className='rounded-md border bg-background p-4'>
+									<div className='flex items-start justify-between gap-3'>
+										<div className='min-w-0'>
+											<p className='truncate font-medium'>{drive.job_title}</p>
+											<div className='mt-1 flex items-center gap-1 text-sm text-muted-foreground'>
+												<Building className='h-4 w-4 shrink-0' />
+												<span className='truncate'>{drive.company.name}</span>
+											</div>
+										</div>
+										<Badge variant='outline' className='shrink-0'>
+											{applicationsByDrive[drive.drive_id] || 0} applied
+										</Badge>
+									</div>
+
+									<div className='mt-4 grid gap-2 text-sm text-muted-foreground'>
+										<div className='flex items-center gap-2'>
+											<Calendar className='h-4 w-4 shrink-0' />
+											<span>
+												{drive.drive_date
+													? formatDate(drive.drive_date)
+													: 'Date not set'}
+											</span>
+										</div>
+										<div>
+											{drive.package_lpa ? `₹${drive.package_lpa} LPA` : 'Package not set'}
+										</div>
+									</div>
+
+									<div className='mt-4 flex justify-end gap-2'>
+										<Button
+											variant='outline'
+											size='icon'
+											aria-label={`View applications for ${drive.job_title}`}
+											onClick={() =>
+												router.push(
+													`/drives-management/${drive.drive_id}/applications`
+												)
+											}>
+											<Users className='h-4 w-4' />
+										</Button>
+										<Button
+											variant='outline'
+											size='icon'
+											aria-label={`Edit ${drive.job_title}`}
+											onClick={() =>
+												router.push(`/drives-management/${drive.drive_id}/edit`)
+											}>
+											<Edit className='h-4 w-4' />
+										</Button>
+										<Button
+											variant='outline'
+											size='icon'
+											aria-label={`Delete ${drive.job_title}`}
+											onClick={() => handleDeleteDrive(drive.drive_id)}>
+											<Trash className='h-4 w-4' />
+										</Button>
+									</div>
+								</div>
+							))}
+						</div>
+
+						<div className='hidden overflow-hidden rounded-md border md:block'>
+							<Table>
 							<TableHeader>
 								<TableRow>
 									<TableHead>Drive</TableHead>
@@ -179,7 +245,8 @@ export default function DrivesManagementPage() {
 									</TableRow>
 								))}
 							</TableBody>
-						</Table>
+							</Table>
+						</div>
 					</CardContent>
 				</Card>
 			)}

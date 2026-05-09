@@ -3,6 +3,7 @@ import { v2 as cloudinary } from 'cloudinary';
 import { join } from 'path';
 import { writeFile, unlink } from 'fs/promises';
 import { randomUUID } from 'crypto';
+import { isAuthResponse, requireAnyUser } from '@/lib/api-auth';
 
 interface CloudinaryUploadResult {
 	secure_url: string;
@@ -18,6 +19,9 @@ cloudinary.config({
 });
 
 export async function POST(request: NextRequest) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const formData = await request.formData();
 

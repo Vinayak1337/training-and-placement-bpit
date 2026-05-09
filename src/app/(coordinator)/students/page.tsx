@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
 	Dialog,
 	DialogContent,
@@ -58,6 +59,14 @@ import StudentForm, {
 	UpdateStudentValues
 } from '@/components/forms/StudentForm';
 import { getStudentColumns } from '@/components/tables/students/columns';
+import {
+	FileText,
+	GraduationCap,
+	Mail,
+	Phone,
+	Pencil,
+	Trash2
+} from 'lucide-react';
 
 export default function StudentsPage() {
 	const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -188,6 +197,7 @@ export default function StudentsPage() {
 		state: { sorting, columnFilters },
 		initialState: { pagination: { pageSize: 10 } }
 	});
+	const visibleStudents = table.getRowModel().rows.map(row => row.original);
 
 	if (isLoadingStudents) return <div>Loading students...</div>;
 	if (studentsError)
@@ -256,7 +266,72 @@ export default function StudentsPage() {
 				/>
 			</div>
 
-			<div className='rounded-md border'>
+			<div className='grid gap-3 md:hidden'>
+				{visibleStudents.length ? (
+					visibleStudents.map(student => (
+						<div
+							key={student.student_id}
+							className='rounded-md border bg-card p-4'>
+							<div className='flex items-start justify-between gap-3'>
+								<div className='min-w-0'>
+									<p className='truncate font-medium'>{student.name}</p>
+									<p className='text-sm text-muted-foreground'>
+										{student.student_id}
+									</p>
+								</div>
+								<Badge variant='outline' className='shrink-0'>
+									{student.branch?.branch_name ?? 'No branch'}
+								</Badge>
+							</div>
+
+							<div className='mt-4 grid gap-2 text-sm text-muted-foreground'>
+								<div className='flex gap-2'>
+									<Mail className='mt-0.5 h-4 w-4 shrink-0' />
+									<span className='break-all'>{student.email}</span>
+								</div>
+								<div className='flex gap-2'>
+									<Phone className='mt-0.5 h-4 w-4 shrink-0' />
+									<span>{student.contact_no || 'No contact number'}</span>
+								</div>
+								<div className='flex gap-2'>
+									<GraduationCap className='mt-0.5 h-4 w-4 shrink-0' />
+									<span>
+										Grade {student.grade || '-'}
+										{student.percentage ? `, ${student.percentage}%` : ''}
+									</span>
+								</div>
+								<div className='flex gap-2'>
+									<FileText className='mt-0.5 h-4 w-4 shrink-0' />
+									<span>{student.resume_url ? 'Resume uploaded' : 'No resume'}</span>
+								</div>
+							</div>
+
+							<div className='mt-4 flex justify-end gap-2'>
+								<Button
+									variant='outline'
+									size='icon'
+									aria-label={`Edit ${student.name}`}
+									onClick={() => handleEditStudent(student)}>
+									<Pencil className='h-4 w-4' />
+								</Button>
+								<Button
+									variant='outline'
+									size='icon'
+									aria-label={`Delete ${student.name}`}
+									onClick={() => handleDeleteStudent(student.student_id)}>
+									<Trash2 className='h-4 w-4' />
+								</Button>
+							</div>
+						</div>
+					))
+				) : (
+					<div className='rounded-md border p-6 text-center text-sm text-muted-foreground'>
+						No students found.
+					</div>
+				)}
+			</div>
+
+			<div className='hidden overflow-hidden rounded-md border md:block'>
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map(headerGroup => (

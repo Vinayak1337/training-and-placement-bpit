@@ -74,15 +74,19 @@ export const useGetPlacements = (filters?: {
 	status?: PlacementStatus | null;
 }) => {
 	const queryParams = new URLSearchParams();
+	const hasStudentIdFilter = Object.prototype.hasOwnProperty.call(
+		filters ?? {},
+		'studentId'
+	);
+	const normalizedStudentId =
+		typeof filters?.studentId === 'string' ? filters.studentId.trim() : '';
 
 	if (filters?.driveId) {
 		queryParams.append('drive_id', filters.driveId.toString());
 	}
 
-	if (filters?.studentId) {
-		if (typeof filters.studentId === 'string' && filters.studentId.trim()) {
-			queryParams.append('student_id', filters.studentId);
-		}
+	if (normalizedStudentId) {
+		queryParams.append('student_id', normalizedStudentId);
 	}
 
 	if (filters?.status) {
@@ -158,10 +162,7 @@ export const useGetPlacements = (filters?: {
 		refetchOnMount: true,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
-		enabled: !(
-			filters?.studentId &&
-			(typeof filters.studentId !== 'string' || !filters.studentId.trim())
-		),
+		enabled: !hasStudentIdFilter || normalizedStudentId.length > 0,
 		retry: 1
 	});
 };

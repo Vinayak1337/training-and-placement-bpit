@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import { PlacementStatus } from '@/hooks/api/placements';
+import {
+	forbiddenResponse,
+	isAuthResponse,
+	isCoordinator,
+	requireAnyUser
+} from '@/lib/api-auth';
 
 const placementCreateSchema = z.object({
 	student_id: z.string(),
@@ -22,11 +28,20 @@ interface CriteriaBranch {
 }
 
 export async function GET(request: Request) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const { searchParams } = new URL(request.url);
 		const driveId = searchParams.get('drive_id');
 		const studentId = searchParams.get('student_id');
 		const status = searchParams.get('status');
+
+		if (!isCoordinator(auth)) {
+			if (!studentId || auth.id !== studentId) {
+				return forbiddenResponse('Students can only access their own placements');
+			}
+		}
 
 		const whereClause: {
 			drive_id?: number;
@@ -77,6 +92,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const body = await request.json();
 
@@ -98,6 +116,15 @@ export async function POST(request: Request) {
 			placement_date,
 			package_lpa_confirmed
 		} = validation.data;
+
+		if (!isCoordinator(auth)) {
+			if (auth.id !== student_id) {
+				return forbiddenResponse('Students can only apply for themselves');
+			}
+			if (status !== PlacementStatus.Applied) {
+				return forbiddenResponse('Students can only create new applications');
+			}
+		}
 
 		const studentExists = await prisma.student.findUnique({
 			where: { student_id }
@@ -161,6 +188,13 @@ export async function POST(request: Request) {
 			}
 		}
 
+		if (!isCoordinator(auth) && !studentExists.resume_url) {
+			return NextResponse.json(
+				{ message: 'Upload a resume before applying for a drive' },
+				{ status: 403 }
+			);
+		}
+
 		const allowedBranchIds = drive.criteria.allowed_branches.map(
 			(cb: CriteriaBranch) => cb.branch_id
 		);
@@ -176,9 +210,9 @@ export async function POST(request: Request) {
 
 		const newPlacement = await prisma.placement.create({
 			data: {
-				student_id,
-				drive_id,
-				status,
+					student_id,
+					drive_id,
+					status: isCoordinator(auth) ? status : PlacementStatus.Applied,
 				placement_date: placement_date ? new Date(placement_date) : null,
 				package_lpa_confirmed:
 					package_lpa_confirmed !== null ? package_lpa_confirmed : null

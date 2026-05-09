@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import { isAuthResponse, requireAnyUser } from '@/lib/api-auth';
 
 cloudinary.config({
 	cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',
@@ -32,6 +33,9 @@ interface CloudinaryError {
 }
 
 export async function POST(request: NextRequest) {
+	const auth = await requireAnyUser(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const formData = await request.formData();
 		const file = formData.get('file') as File;

@@ -221,11 +221,11 @@ export default function StudentDashboard() {
 
 	// Initialize hooks BEFORE using their values in useEffect
 	const { data: eligibleDrives, isLoading: isLoadingDrives } =
-		useGetEligibleDrives(studentId || '');
+		useGetEligibleDrives(studentId ?? null);
 
 	const { data: myApplications, isLoading: isLoadingApplications } =
 		useGetPlacements({
-			studentId: studentId || ''
+			studentId: studentId ?? null
 		});
 
 	const createApplication = useCreatePlacement();

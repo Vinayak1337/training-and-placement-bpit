@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import * as z from 'zod';
 import bcrypt from 'bcryptjs';
 import { type NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { isAuthResponse, requireCoordinator } from '@/lib/api-auth';
 
 const studentCreateSchema = z.object({
 	student_id: z.string().min(1, 'Student ID is required').max(50),
@@ -34,7 +34,10 @@ const studentCreateSchema = z.object({
 
 // GET: Fetch all students, including branch details
 // TODO: Implement pagination and filtering later if needed
-export async function GET() {
+export async function GET(request: NextRequest) {
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
+
 	try {
 		const students = await prisma.student.findMany({
 			orderBy: {
@@ -63,16 +66,8 @@ export async function GET() {
 // POST: Create a new student
 // TODO: Add authentication check (Admin only)
 export async function POST(request: NextRequest) {
-	// Add authentication check
-	const token = await getToken({ req: request });
-
-	// Check if the user is authenticated and has the coordinator role
-	if (!token || token.role !== 'coordinator') {
-		return NextResponse.json(
-			{ message: 'Unauthorized. Only coordinators can create students.' },
-			{ status: 401 }
-		);
-	}
+	const auth = await requireCoordinator(request);
+	if (isAuthResponse(auth)) return auth;
 
 	try {
 		const body = await request.json();

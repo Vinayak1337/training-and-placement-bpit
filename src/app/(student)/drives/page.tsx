@@ -34,11 +34,11 @@ export default function DrivesPage() {
 
 	// Initialize hooks BEFORE using their values in useEffect
 	const { data: eligibleDrives, isLoading: isLoadingDrives } =
-		useGetEligibleDrives(studentId || '');
+		useGetEligibleDrives(studentId ?? null);
 
 	const { data: myApplications, isLoading: isLoadingApplications } =
 		useGetPlacements({
-			studentId: studentId || ''
+			studentId: studentId ?? null
 		});
 
 	const createApplication = useCreatePlacement();
@@ -82,7 +82,7 @@ export default function DrivesPage() {
 
 		if (!hasResume) {
 			toast.error('Please upload your resume before applying');
-			router.push('/student-dashboard');
+			router.push('/profile');
 			return;
 		}
 
